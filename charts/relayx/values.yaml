@@ -1,0 +1,35 @@
+# Required: "<repository>" and "<tag>", where tag may carry a digest
+# (main@sha256:...). No default, so a box can never run an image by accident.
+image:
+  repository: ghcr.io/ipni/relayx
+  tag: ""
+
+args:
+  - serve
+  - --delegate=pebble
+  - --pebblePath=/data
+  - --pebbleOptions=/pebble/pebble.options
+
+# A list, because order is part of the pod template: reordering restarts relayx.
+env: []
+
+resources: {}
+
+# Flush remaining memtables then Close; 17T stores can take several minutes.
+terminationGracePeriodSeconds: 600
+# Recreate waits for terminationGracePeriodSeconds, then Open of the new pod.
+progressDeadlineSeconds: 1800
+
+# Host directory holding the Pebble store. Required.
+dataPath: ""
+
+pebbleOptions:
+  # Contents of pebble.options. Required.
+  content: ""
+  # Leave empty: the ConfigMap is named after a hash of its content, so changing
+  # it restarts relayx. Set it only to adopt a running box without a restart;
+  # while set, changing content does NOT restart relayx.
+  configMapName: ""
+
+podMonitor:
+  enabled: true

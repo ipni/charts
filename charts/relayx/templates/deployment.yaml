@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: relayx
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "relayx.labels" . | nindent 4 }}
+spec:
+  # hostPath Pebble lock is exclusive. RollingUpdate starts a second pod that
+  # cannot Open the DB while the old pod still holds LOCK.
+  strategy:
+    type: Recreate
+  progressDeadlineSeconds: {{ .Values.progressDeadlineSeconds }}
+  selector:
+    matchLabels:
+      app: relayx
+  template:
+    metadata:
+      labels:
+        app: relayx
+    spec:
+      terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
+      containers:
+        - name: relayx
+          image: "{{ .Values.image.repository }}:{{ required "image.tag is required" .Values.image.tag }}"
+          args:
+            {{- toYaml .Values.args | nindent 12 }}
+          {{- with .Values.env }}
+          env:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          ports:
+            - containerPort: 8080
+              name: http
+          readinessProbe:
+            tcpSocket:
+              port: 8080
+            initialDelaySeconds: 10
+            failureThreshold: 3
+            successThreshold: 1
+            timeoutSeconds: 5
+            periodSeconds: 10
+          {{- with .Values.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - mountPath: /pebble
+              name: options
+            - mountPath: /data
+              name: data
+      volumes:
+        - name: options
+          configMap:
+            name: {{ include "relayx.configMapName" . }}
+        - name: data
+          hostPath:
+            path: {{ required "dataPath is required" .Values.dataPath }}
+            type: DirectoryOrCreate

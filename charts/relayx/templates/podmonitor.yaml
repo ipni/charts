@@ -1,0 +1,19 @@
+{{- if .Values.podMonitor.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: relayx
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "relayx.labels" . | nindent 4 }}
+spec:
+  namespaceSelector:
+    matchNames:
+      - {{ .Release.Namespace }}
+  podMetricsEndpoints:
+    - path: /metrics
+      port: http
+  selector:
+    matchLabels:
+      app: relayx
+{{- end }}
