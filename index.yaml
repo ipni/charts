@@ -1,0 +1,17 @@
+apiVersion: v1
+entries:
+  relayx:
+  - apiVersion: v2
+    created: "2026-11-05T16:17:45.480770119Z"
+    description: HTTP shim over a Pebble key-value store, used by storetheindex to
+      persist index state
+    digest: eb6914ec0fea75221465fe711a43ab72a9634d5aa78003c35391f15b70b1378d
+    home: https://github.com/ipni/relayx
+    name: relayx
+    sources:
+    - https://github.com/ipni/relayx
+    type: application
+    urls:
+    - https://github.com/ipni/charts/releases/download/relayx-0.1.0/relayx-0.1.0.tgz
+    version: 0.1.0
+generated: "2026-11-05T16:17:45.480777288Z"
