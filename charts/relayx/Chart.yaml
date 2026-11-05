@@ -4,3 +4,5 @@ description: HTTP shim over a Pebble key-value store, used by storetheindex to p
 type: application
 version: 0.1.0
 home: https://github.com/ipni/relayx
+sources:
+  - https://github.com/ipni/relayx
