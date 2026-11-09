@@ -1,16 +1,14 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: relayx
+  name: {{ .Values.name }}
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "relayx.labels" . | nindent 4 }}
 spec:
-  clusterIP: None
+  clusterIP: {{ .Values.service.clusterIP }}
   ports:
-    - name: http
-      port: 8080
-      targetPort: http
+    {{- toYaml .Values.service.ports | nindent 4 }}
   selector:
-    app: relayx
-  type: ClusterIP
+    {{- toYaml .Values.selectorLabels | nindent 4 }}
+  type: {{ .Values.service.type }}

@@ -1,0 +1,42 @@
+{{- $site := required "site is required" .Values.site }}
+{{- $siteHost := printf "%s.%s" $site .Values.domain }}
+{{- $siteName := printf "%s-%s" $site (.Values.domain | replace "." "-") }}
+{{- range $key, $ingressRoute := .Values.ingressRoutes }}
+{{- $host := $siteHost }}
+{{- $name := $siteName }}
+{{- with $ingressRoute.hostPrefix }}
+{{- $host = printf "%s.%s" . $siteHost }}
+{{- $name = printf "%s-%s" . $siteName }}
+{{- end }}
+---
+apiVersion: {{ $.Values.apiGroup }}/v1alpha1
+kind: IngressRoute
+metadata:
+  name: {{ $name }}
+  namespace: {{ $.Release.Namespace }}
+spec:
+  entryPoints:
+    {{- toYaml $.Values.entryPoints | nindent 4 }}
+  routes:
+    {{- range $routeName, $route := $ingressRoute.routes }}
+    {{- if $route.enabled }}
+    - kind: Rule
+      match: {{ printf "Host(`%s`) && %s" $host $route.match | quote }}
+      {{- with $route.priority }}
+      priority: {{ . }}
+      {{- end }}
+      services:
+        - name: {{ $route.service }}
+          port: {{ $route.port }}
+      middlewares:
+        {{- range $route.middlewares }}
+        - name: {{ $site }}-{{ . }}
+        {{- end }}
+    {{- end }}
+    {{- end }}
+  tls:
+    certResolver: {{ $.Values.certResolver }}
+    domains:
+      - main: {{ $host }}
+        sans: []
+{{- end }}

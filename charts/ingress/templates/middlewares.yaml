@@ -1,0 +1,11 @@
+{{- $site := required "site is required" .Values.site }}
+{{- range $name, $spec := .Values.middlewares }}
+---
+apiVersion: {{ $.Values.apiGroup }}/v1alpha1
+kind: Middleware
+metadata:
+  name: {{ $site }}-{{ $name }}
+  namespace: {{ $.Release.Namespace }}
+spec:
+  {{- toYaml $spec | nindent 2 }}
+{{- end }}

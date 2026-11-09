@@ -1,0 +1,8 @@
+apiVersion: v2
+name: assigner
+description: Forwards each advertisement announcement to the configured indexers
+type: application
+version: 0.1.0
+home: https://github.com/ipni/storetheindex
+sources:
+  - https://github.com/ipni/storetheindex

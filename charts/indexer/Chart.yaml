@@ -1,0 +1,8 @@
+apiVersion: v2
+name: indexer
+description: storetheindex, which ingests advertisement chains and answers finds
+type: application
+version: 0.1.0
+home: https://github.com/ipni/storetheindex
+sources:
+  - https://github.com/ipni/storetheindex

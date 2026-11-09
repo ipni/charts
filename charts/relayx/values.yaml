@@ -1,17 +1,55 @@
+# Name of the Deployment, Service, PodMonitor and the ConfigMap's prefix.
+name: relayx
+
 # Required: "<repository>" and "<tag>", where tag may carry a digest
 # (main@sha256:...). No default, so a box can never run an image by accident.
 image:
   repository: ghcr.io/ipni/relayx
   tag: ""
+  # Empty uses the Kubernetes default.
+  pullPolicy: ""
 
+replicas: 1
+# hostPath Pebble lock is exclusive. RollingUpdate starts a second pod that
+# cannot Open the DB while the old pod still holds LOCK.
+strategy:
+  type: Recreate
+
+# Selects the pods. A Deployment's selector is immutable, so changing this means
+# deleting the Deployment.
+selectorLabels:
+  app: relayx
+
+podSecurityContext: {}
+
+# --pebblePath and --pebbleOptions have to match dataMountPath and pebbleOptions.
 args:
   - serve
   - --delegate=pebble
   - --pebblePath=/data
   - --pebbleOptions=/pebble/pebble.options
 
-# A list, because order is part of the pod template: reordering restarts relayx.
-env: []
+# By variable name. Maps merge across values files, so a box adds one with
+# NAME: value and removes one with NAME: null, in its values alone: no new chart
+# release. A value is a string, or a map such as valueFrom. Rendered sorted by
+# name.
+env: {}
+
+# Names in env that must have a value, or the chart fails to render.
+requiredEnv: []
+
+ports:
+  - containerPort: 8080
+    name: http
+
+readinessProbe:
+  tcpSocket:
+    port: 8080
+  initialDelaySeconds: 10
+  failureThreshold: 3
+  successThreshold: 1
+  timeoutSeconds: 5
+  periodSeconds: 10
 
 resources: {}
 
@@ -22,14 +60,37 @@ progressDeadlineSeconds: 1800
 
 # Host directory holding the Pebble store. Required.
 dataPath: ""
+dataPathType: DirectoryOrCreate
+dataMountPath: /data
 
 pebbleOptions:
   # Contents of pebble.options. Required.
   content: ""
+  fileName: pebble.options
+  mountPath: /pebble
   # Leave empty: the ConfigMap is named after a hash of its content, so changing
   # it restarts relayx. Set it only to adopt a running box without a restart;
   # while set, changing content does NOT restart relayx.
   configMapName: ""
 
+service:
+  type: ClusterIP
+  clusterIP: None
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+
 podMonitor:
   enabled: true
+  path: /metrics
+  port: http
+
+# Anything else the pod needs, without changing the chart.
+envFrom: []
+podAnnotations: {}
+nodeSelector: {}
+tolerations: []
+affinity: {}
+extraVolumes: []
+extraVolumeMounts: []

@@ -2,7 +2,7 @@ apiVersion: v2
 name: relayx
 description: HTTP shim over a Pebble key-value store, used by storetheindex to persist index state
 type: application
-version: 0.1.0
+version: 0.2.0
 home: https://github.com/ipni/relayx
 sources:
   - https://github.com/ipni/relayx

@@ -1,0 +1,19 @@
+{{- if .Values.podMonitor.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: {{ .Values.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "indexer.labels" . | nindent 4 }}
+spec:
+  namespaceSelector:
+    matchNames:
+      - {{ .Release.Namespace }}
+  podMetricsEndpoints:
+    - path: {{ .Values.podMonitor.path }}
+      port: {{ .Values.podMonitor.port }}
+  selector:
+    matchLabels:
+      {{- toYaml .Values.selectorLabels | nindent 6 }}
+{{- end }}

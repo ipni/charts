@@ -1,0 +1,12 @@
+{{- if not .Values.config }}
+{{- fail "config is required" }}
+{{- end }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "assigner.configMapName" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "assigner.labels" . | nindent 4 }}
+data:
+  config: {{ .Values.config | toPrettyJson | quote }}

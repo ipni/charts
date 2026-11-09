@@ -1,0 +1,124 @@
+# The box's name in its hostnames and in the names of its routes and
+# middlewares. Required.
+site: ""
+
+domain: cid.contact
+
+# traefik.io for Traefik v3. Traefik v2 boxes use traefik.containo.us.
+apiGroup: traefik.io
+
+# The certificate resolver configured on Traefik.
+certResolver: le
+
+entryPoints:
+  - websecure
+
+# By name, as the spec of each Middleware. The object is <site>-<name>.
+middlewares:
+  # See: https://doc.traefik.io/traefik/middlewares/http/ratelimit/
+  rate-limit:
+    rateLimit:
+      sourceCriterion:
+        ipStrategy:
+          depth: 1
+      period: 1m
+      average: 60
+      burst: 60
+  # See: https://doc.traefik.io/traefik/middlewares/http/headers/#using-security-headers
+  cid-contact:
+    headers:
+      accessControlAllowOriginList:
+        - "*"
+
+# One IngressRoute per entry. hostPrefix gives the hostname: <site>.<domain>, or
+# <hostPrefix>.<site>.<domain>. Each host has its own IngressRoute so an ACME
+# failure on one cannot block the certificates of the others.
+#
+# Routes are maps so a box can change one without repeating the rest. Each match
+# is the part of the rule after the Host. middlewares are names from above.
+ingressRoutes:
+  site:
+    hostPrefix: ""
+    # Traefik default priority is match-rule length, so a long catch-all can
+    # beat or tie short Path/PathPrefix routes. Explicit priorities:
+    # 1 = indexstar catch-all, 100 = indexer APIs, 200 = more-specific prefixes.
+    routes:
+      indexstar:
+        enabled: true
+        # Avoid conflict with TLS HTTP challenge by explicitly excluding /.well-known.
+        match: "! PathPrefix(`/.well-known`)"
+        priority: 1
+        service: indexstar
+        port: 8080
+        middlewares: [cid-contact]
+      announce:
+        enabled: true
+        match: "( Path(`/ingest/announce`) || Path(`/announce`) )"
+        priority: 100
+        service: assigner
+        port: 3001
+        middlewares: [cid-contact]
+      sync-status-ad:
+        enabled: true
+        # Advertisement status is served by the ingest HTTP API (no rate limit; high traffic).
+        match: "( PathPrefix(`/sync/status/ad`) )"
+        priority: 200
+        service: indexer
+        port: 3001
+        middlewares: [cid-contact]
+      sync-status:
+        enabled: true
+        # Publisher sync status is served by the ingest HTTP API.
+        match: "( PathPrefix(`/sync/status`) )"
+        priority: 100
+        service: indexer
+        port: 3001
+        middlewares: [cid-contact, rate-limit]
+      sample:
+        enabled: true
+        match: "( PathPrefix(`/ipni/v0/sample`) )"
+        priority: 100
+        service: indexer
+        port: 3004
+        middlewares: [cid-contact]
+      # Metering report of every provider, from the admin API. Only this path
+      # and read methods are routed: the admin port also serves write and
+      # control endpoints. Needs admin in the indexer's Service.
+      metering:
+        enabled: false
+        match: "Path(`/metering/providers`) && ( Method(`GET`) || Method(`HEAD`) )"
+        priority: 200
+        service: indexer
+        port: 3002
+        middlewares: [cid-contact, rate-limit]
+      # For a box that owns a CAR mirror other sites read from.
+      carmirror:
+        enabled: false
+        match: "( PathPrefix(`/carmirror`) )"
+        priority: 100
+        service: indexer
+        port: 3005
+        middlewares: [cid-contact]
+  # Direct find hostname used by other sites' indexstar instances.
+  find:
+    hostPrefix: find
+    routes:
+      find:
+        enabled: true
+        match: "(PathPrefix(`/cid/`) || PathPrefix(`/multihash/`))"
+        service: indexer
+        port: 3000
+        middlewares: [cid-contact]
+  # Direct ingest hostname used by other sites' assigner (announce fan-out).
+  # Hits indexer ingest directly so it cannot loop through the public announce
+  # hostname. No rate limit: fan-out from one peer would otherwise share one IP
+  # budget.
+  ingest:
+    hostPrefix: ingest
+    routes:
+      announce:
+        enabled: true
+        match: "(Path(`/ingest/announce`) || Path(`/announce`))"
+        service: indexer
+        port: 3001
+        middlewares: [cid-contact]

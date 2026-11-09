@@ -1,0 +1,8 @@
+apiVersion: v2
+name: ingress
+description: Traefik routes for an indexer box's public hostnames
+type: application
+version: 0.1.0
+home: https://github.com/ipni/charts
+sources:
+  - https://github.com/ipni/charts

@@ -1,0 +1,80 @@
+# Name of the Deployment, Service, PodDisruptionBudget and PodMonitor.
+name: indexstar
+
+# Required: "<repository>" and "<tag>", where tag may carry a digest
+# (v0.1.20@sha256:...). No default, so a box can never run an image by accident.
+image:
+  repository: ghcr.io/ipni/indexstar
+  tag: ""
+  # Empty uses the Kubernetes default.
+  pullPolicy: ""
+
+replicas: 2
+# Empty uses the Kubernetes default, a rolling update.
+strategy: {}
+
+# Selects the pods. A Deployment's selector is immutable, so changing this means
+# deleting the Deployment.
+selectorLabels:
+  app: indexstar
+
+podSecurityContext:
+  runAsUser: 10001
+  fsGroup: 532
+
+# The --backends and --providersBackends of this box. Required. A list, because
+# order is part of the pod template: reordering restarts indexstar.
+args: []
+
+# By variable name. Maps merge across values files, so a box adds one with
+# NAME: value and removes one with NAME: null, in its values alone: no new chart
+# release. A value is a string, or a map such as valueFrom. Rendered sorted by
+# name.
+env: {}
+
+# Names in env that must have a value, or the chart fails to render.
+requiredEnv: []
+
+ports:
+  - containerPort: 8080
+    name: http
+  - containerPort: 8081
+    name: metrics
+
+readinessProbe:
+  httpGet:
+    port: http
+    path: /health
+  initialDelaySeconds: 10
+  failureThreshold: 3
+  successThreshold: 1
+  timeoutSeconds: 5
+  periodSeconds: 10
+
+resources: {}
+
+service:
+  type: ClusterIP
+  clusterIP: None
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+
+podDisruptionBudget:
+  enabled: true
+  maxUnavailable: 1
+
+podMonitor:
+  enabled: true
+  path: /metrics
+  port: metrics
+
+# Anything else the pod needs, without changing the chart.
+envFrom: []
+podAnnotations: {}
+nodeSelector: {}
+tolerations: []
+affinity: {}
+extraVolumes: []
+extraVolumeMounts: []

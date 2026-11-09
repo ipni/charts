@@ -1,0 +1,97 @@
+# Name of the Deployment, Service and PodMonitor.
+name: assigner
+
+# Required: "<repository>" and "<tag>", where tag may carry a digest
+# (main@sha256:...). No default, so a box can never run an image by accident.
+image:
+  repository: ghcr.io/ipni/storetheindex
+  tag: ""
+  pullPolicy: IfNotPresent
+
+# Do not run more than one replica. The old assigner has to stop before a new
+# one starts, to avoid conflicts between assignments.
+replicas: 1
+strategy:
+  type: Recreate
+
+# Selects the pods. A Deployment's selector is immutable, so changing this means
+# deleting the Deployment.
+selectorLabels:
+  app: assigner
+
+terminationGracePeriodSeconds: 30
+
+podSecurityContext:
+  runAsUser: 10001
+  fsGroup: 532
+
+args:
+  - assigner
+  - daemon
+
+# By variable name. Maps merge across values files, so a box adds one with
+# NAME: value and removes one with NAME: null, in its values alone: no new chart
+# release. A value is a string, or a map such as valueFrom. Rendered sorted by
+# name.
+env:
+  GOLOG_LOG_LEVEL: INFO
+  GOLOG_LOG_FMT: json
+  # Has to match configMountPath.
+  ASSIGNER_PATH: /config
+
+# Names in env that must have a value, or the chart fails to render.
+requiredEnv:
+  - ASSIGNER_PATH
+
+ports:
+  - containerPort: 3001
+    name: http
+  - containerPort: 3003
+    name: libp2p
+  - containerPort: 8081
+    name: metrics
+
+readinessProbe:
+  httpGet:
+    port: http
+    path: /health
+  initialDelaySeconds: 10
+  failureThreshold: 3
+  successThreshold: 1
+  timeoutSeconds: 5
+  periodSeconds: 10
+
+resources: {}
+
+# The assigner config file, as YAML; the chart renders it as JSON. Maps merge
+# across values files, so a box only sets what differs. Required.
+config: {}
+configMountPath: /config
+
+# Leave empty: the ConfigMap is named after a hash of its content, so changing
+# it restarts the assigner, which reads its config only at startup. Set it only
+# to give the ConfigMap a fixed name; while set, changing config does NOT restart
+# the assigner.
+configMapName: ""
+
+service:
+  type: ClusterIP
+  clusterIP: None
+  ports:
+    - name: http
+      port: 3001
+      targetPort: http
+
+podMonitor:
+  enabled: true
+  path: /metrics
+  port: metrics
+
+# Anything else the pod needs, without changing the chart.
+envFrom: []
+podAnnotations: {}
+nodeSelector: {}
+tolerations: []
+affinity: {}
+extraVolumes: []
+extraVolumeMounts: []
