@@ -4,7 +4,7 @@
 apiVersion: {{ .Values.apiGroup }}/v1alpha1
 kind: IngressRoute
 metadata:
-  name: sf-cid-contact
+  name: {{ $site }}-cid-contact
   namespace: {{ .Release.Namespace }}
 spec:
   entryPoints:
@@ -21,7 +21,7 @@ spec:
         - name: indexstar
           port: 8080
       middlewares:
-        - name: sf-cid-contact
+        - name: {{ $site }}-cid-contact
     - kind: Rule
       match: Host(`{{ $host }}`) && ( Path(`/ingest/announce`) || Path(`/announce`) )
       priority: 100
@@ -29,7 +29,7 @@ spec:
         - name: assigner
           port: 3001
       middlewares:
-        - name: sf-cid-contact
+        - name: {{ $site }}-cid-contact
     - kind: Rule
       # Advertisement status is served by the ingest HTTP API (no rate limit; high traffic).
       match: Host(`{{ $host }}`) && ( PathPrefix(`/sync/status/ad`) )
@@ -38,7 +38,7 @@ spec:
         - name: {{ $indexer }}
           port: 3001
       middlewares:
-        - name: sf-cid-contact
+        - name: {{ $site }}-cid-contact
     - kind: Rule
       # Publisher sync status is served by the ingest HTTP API.
       match: Host(`{{ $host }}`) && ( PathPrefix(`/sync/status`) )
@@ -47,8 +47,8 @@ spec:
         - name: {{ $indexer }}
           port: 3001
       middlewares:
-        - name: sf-cid-contact
-        - name: sf-rate-limit
+        - name: {{ $site }}-cid-contact
+        - name: {{ $site }}-rate-limit
     - kind: Rule
       match: Host(`{{ $host }}`) && ( PathPrefix(`/ipni/v0/sample`) )
       priority: 100
@@ -56,7 +56,7 @@ spec:
         - name: {{ $indexer }}
           port: 3004
       middlewares:
-        - name: sf-cid-contact
+        - name: {{ $site }}-cid-contact
     {{- if .Values.routes.metering }}
     - kind: Rule
       # Metering report of every provider, from the admin API. Only this path
@@ -68,8 +68,8 @@ spec:
         - name: {{ $indexer }}
           port: 3002
       middlewares:
-        - name: sf-cid-contact
-        - name: sf-rate-limit
+        - name: {{ $site }}-cid-contact
+        - name: {{ $site }}-rate-limit
     {{- end }}
     {{- if .Values.routes.carMirror }}
     - kind: Rule
@@ -79,7 +79,7 @@ spec:
         - name: {{ $indexer }}
           port: 3005
       middlewares:
-        - name: sf-cid-contact
+        - name: {{ $site }}-cid-contact
     {{- end }}
   tls:
     certResolver: {{ .Values.certResolver }}
@@ -105,7 +105,7 @@ spec:
         - name: {{ $indexer }}
           port: 3000
       middlewares:
-        - name: sf-cid-contact
+        - name: {{ $site }}-cid-contact
   tls:
     certResolver: {{ .Values.certResolver }}
     domains:
@@ -132,7 +132,7 @@ spec:
         - name: {{ $indexer }}
           port: 3001
       middlewares:
-        - name: sf-cid-contact
+        - name: {{ $site }}-cid-contact
   tls:
     certResolver: {{ .Values.certResolver }}
     domains:

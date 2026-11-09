@@ -1,5 +1,5 @@
-# The box's name in its hostnames: <site>, find.<site> and ingest.<site> under
-# cid.contact. Required.
+# The box's name in its hostnames (<site>, find.<site> and ingest.<site> under
+# cid.contact) and in the names of the routes and middlewares. Required.
 site: ""
 
 # traefik.io for Traefik v3. Traefik v2 boxes use traefik.containo.us.

@@ -1,7 +1,8 @@
+{{- $site := required "site is required" .Values.site }}
 apiVersion: {{ .Values.apiGroup }}/v1alpha1
 kind: Middleware
 metadata:
-  name: sf-rate-limit
+  name: {{ $site }}-rate-limit
   namespace: {{ .Release.Namespace }}
 spec:
   # See: https://doc.traefik.io/traefik/middlewares/http/ratelimit/
@@ -16,7 +17,7 @@ spec:
 apiVersion: {{ .Values.apiGroup }}/v1alpha1
 kind: Middleware
 metadata:
-  name: sf-cid-contact
+  name: {{ $site }}-cid-contact
   namespace: {{ .Release.Namespace }}
 spec:
   # See: https://doc.traefik.io/traefik/middlewares/http/headers/#using-security-headers

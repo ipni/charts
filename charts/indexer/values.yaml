@@ -4,8 +4,8 @@ image:
   repository: ghcr.io/ipni/storetheindex
   tag: ""
 
-# Prepended to the name of every object this chart creates. sf and sf2 both
-# use "sf-", and the Ingress Controller dashboard matches on sf-indexer.
+# Prepended to the name of every object this chart creates. Leave empty on a
+# box; it is here to compare the chart with sf's and sf2's manifests.
 namePrefix: ""
 
 # A list, because order is part of the pod template: reordering restarts the
