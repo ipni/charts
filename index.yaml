@@ -1,6 +1,85 @@
 apiVersion: v1
 entries:
+  assigner:
+  - apiVersion: v2
+    created: "2026-11-09T15:09:16.952756136Z"
+    description: Forwards each advertisement announcement to the configured indexers
+    digest: 81e0c4ea2522930c029158dab2308e172c164ae485b2ed07a8382f9ec1f7ae89
+    home: https://github.com/ipni/storetheindex
+    name: assigner
+    sources:
+    - https://github.com/ipni/storetheindex
+    type: application
+    urls:
+    - https://github.com/ipni/charts/releases/download/assigner-0.1.0/assigner-0.1.0.tgz
+    version: 0.1.0
+  cross-announce:
+  - apiVersion: v2
+    created: "2026-11-09T15:09:17.230108299Z"
+    description: Re-announces the latest advertisement of every provider known to
+      another indexer
+    digest: 1f45e870eeb2abef5f15b36e4661acc52999c12deab5d323262fa3c3f5f44faa
+    home: https://github.com/ipni/storetheindex
+    name: cross-announce
+    sources:
+    - https://github.com/ipni/storetheindex
+    type: application
+    urls:
+    - https://github.com/ipni/charts/releases/download/cross-announce-0.1.0/cross-announce-0.1.0.tgz
+    version: 0.1.0
+  indexer:
+  - apiVersion: v2
+    created: "2026-11-09T15:09:17.446275383Z"
+    description: storetheindex, which ingests advertisement chains and answers finds
+    digest: 280a3404a7dbace6fed3ca8eade13324c40a52a98159550b3a69e1812fe92e07
+    home: https://github.com/ipni/storetheindex
+    name: indexer
+    sources:
+    - https://github.com/ipni/storetheindex
+    type: application
+    urls:
+    - https://github.com/ipni/charts/releases/download/indexer-0.1.0/indexer-0.1.0.tgz
+    version: 0.1.0
+  indexstar:
+  - apiVersion: v2
+    created: "2026-11-09T15:09:17.675476288Z"
+    description: Sends each find to a set of indexers and merges the results
+    digest: da16fdd72958f261da690417266857c868e936e5a52a82964c48e59b477f2e73
+    home: https://github.com/ipni/indexstar
+    name: indexstar
+    sources:
+    - https://github.com/ipni/indexstar
+    type: application
+    urls:
+    - https://github.com/ipni/charts/releases/download/indexstar-0.1.0/indexstar-0.1.0.tgz
+    version: 0.1.0
+  ingress:
+  - apiVersion: v2
+    created: "2026-11-09T15:09:17.87117461Z"
+    description: Traefik routes for an indexer box's public hostnames
+    digest: 5d3ebc2974575b35bb890aa9bbe5ae02d3643402bab3ffd34bc3f3e189bd8ad7
+    home: https://github.com/ipni/charts
+    name: ingress
+    sources:
+    - https://github.com/ipni/charts
+    type: application
+    urls:
+    - https://github.com/ipni/charts/releases/download/ingress-0.1.0/ingress-0.1.0.tgz
+    version: 0.1.0
   relayx:
+  - apiVersion: v2
+    created: "2026-11-09T15:09:18.039334552Z"
+    description: HTTP shim over a Pebble key-value store, used by storetheindex to
+      persist index state
+    digest: e0afa8357c607ecee5da7ca9ca44925807ec9e651664c95fd846dec07747f595
+    home: https://github.com/ipni/relayx
+    name: relayx
+    sources:
+    - https://github.com/ipni/relayx
+    type: application
+    urls:
+    - https://github.com/ipni/charts/releases/download/relayx-0.2.0/relayx-0.2.0.tgz
+    version: 0.2.0
   - apiVersion: v2
     created: "2026-11-05T16:17:45.480770119Z"
     description: HTTP shim over a Pebble key-value store, used by storetheindex to
@@ -14,4 +93,4 @@ entries:
     urls:
     - https://github.com/ipni/charts/releases/download/relayx-0.1.0/relayx-0.1.0.tgz
     version: 0.1.0
-generated: "2026-11-05T16:17:45.480777288Z"
+generated: "2026-11-09T15:09:18.039346797Z"
