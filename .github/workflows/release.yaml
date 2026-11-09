@@ -1,4 +1,5 @@
-# Same mechanism as bcnmy/charts: chart-releaser, GitHub Releases, gh-pages index.
+# Publishes each chart whose version changed, as a GitHub Release and in the
+# index on gh-pages.
 name: Release charts
 on:
   push:
