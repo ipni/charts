@@ -70,7 +70,8 @@ configMountPath: /config
 
 # Leave empty: the ConfigMap is named after a hash of its content, so changing
 # it restarts the assigner, which reads its config only at startup. Set it only
-# to compare with a Kustomize render.
+# to give the ConfigMap a fixed name; while set, changing config does NOT restart
+# the assigner.
 configMapName: ""
 
 service:

@@ -106,7 +106,7 @@ config: {}
 configMountPath: /config
 
 # Leave empty: the ConfigMap is named after a hash of its content, so changing
-# it restarts the indexer. Set it only to compare with a Kustomize render;
+# it restarts the indexer. Set it only to give the ConfigMap a fixed name;
 # while set, changing config does NOT restart the indexer.
 configMapName: ""
 
