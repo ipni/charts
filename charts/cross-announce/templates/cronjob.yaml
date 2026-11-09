@@ -1,0 +1,70 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: cross-announce
+  namespace: {{ .Release.Namespace }}
+  labels:
+    helm.sh/chart: {{ printf "%s-%s" .Chart.Name .Chart.Version }}
+    app.kubernetes.io/name: cross-announce
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+spec:
+  schedule: {{ .Values.schedule | quote }}
+  suspend: {{ .Values.suspend }}
+  # Do not allow two runs to overlap: the second run is skipped.
+  concurrencyPolicy: Forbid
+  # A job that cannot start within this many seconds is dropped.
+  startingDeadlineSeconds: 300
+  successfulJobsHistoryLimit: 1
+  # KubeCronJobFailing counts the failed Jobs kept here (monitoring rules/jobs.yaml)
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      ttlSecondsAfterFinished: 86400
+      template:
+        metadata:
+          labels:
+            app: cross-announce
+        spec:
+          restartPolicy: OnFailure
+          volumes:
+            - name: src
+              emptyDir: {}
+          containers:
+            - name: runner
+              image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+              imagePullPolicy: IfNotPresent
+              env:
+                - name: AD_SOURCE
+                  value: {{ required "source is required" .Values.source | quote }}
+                - name: AD_TARGET
+                  value: {{ required "target is required" .Values.target | quote }}
+                - name: CODE_VERSION
+                  value: {{ required "codeVersion is required" .Values.codeVersion | quote }}
+              volumeMounts:
+                - name: src
+                  mountPath: /src
+              command: ["/bin/bash", "-c"]
+              args:
+                - |
+                  set -euo pipefail
+
+                  REPO_URL="https://github.com/ipni/storetheindex"
+                  DEST="/src"
+
+                  # If the directory already exists (previous run that didn't clean up),
+                  # just update it; otherwise clone fresh.
+                  if [ -d "$DEST/.git" ]; then
+                    echo "Repo already present – pulling latest changes..."
+                    cd "$DEST"
+                    git fetch --depth=1 origin "$CODE_VERSION"
+                    git reset --hard "origin/$CODE_VERSION"
+                  else
+                    echo "Cloning $REPO_URL into $DEST ..."
+                    git clone --depth=1 --branch "$CODE_VERSION" "$REPO_URL" "$DEST"
+                  fi
+
+                  echo "Running go script..."
+                  cd "$DEST"
+                  # The script may need network access – ensure it has it.
+                  go run scripts/cross_announce/main.go --source "$AD_SOURCE" --target "$AD_TARGET"

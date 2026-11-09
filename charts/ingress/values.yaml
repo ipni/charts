@@ -1,0 +1,18 @@
+# The box's name in its hostnames: <site>, find.<site> and ingest.<site> under
+# cid.contact. Required.
+site: ""
+
+# traefik.io for Traefik v3. Traefik v2 boxes use traefik.containo.us.
+apiGroup: traefik.io
+
+# The certificate resolver configured on Traefik.
+certResolver: le
+
+# Service name of the indexer on this box. Required.
+indexerService: ""
+
+routes:
+  # /carmirror, for a box that owns a CAR mirror other sites read from.
+  carMirror: false
+  # /metering/providers, which needs the indexer's admin port in its Service.
+  metering: false

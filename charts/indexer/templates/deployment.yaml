@@ -1,0 +1,105 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "indexer.name" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "indexer.labels" . | nindent 4 }}
+spec:
+  # One replica on purpose: the datastores on the host paths belong to one
+  # process, so the old pod has to stop before the new one starts.
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: indexer-single
+  template:
+    metadata:
+      labels:
+        app: indexer-single
+    spec:
+      terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
+      securityContext:
+        runAsUser: 0
+        fsGroup: 532
+      containers:
+        - name: indexer
+          image: "{{ .Values.image.repository }}:{{ required "image.tag is required" .Values.image.tag }}"
+          imagePullPolicy: IfNotPresent
+          env:
+            {{- with .Values.env }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+            - name: STORETHEINDEX_PRIV_KEY_PATH
+              value: /identity/identity.key
+            - name: STORETHEINDEX_PATH
+              value: /config
+          {{- with .Values.envFrom }}
+          envFrom:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          ports:
+            - containerPort: 3004
+              name: rx
+            - containerPort: 3005
+              name: carmirror
+            - containerPort: 3000
+              name: finder
+            - containerPort: 3001
+              name: ingest
+            - containerPort: 3002
+              name: admin
+          readinessProbe:
+            httpGet:
+              port: finder
+              path: /health
+            initialDelaySeconds: 10
+            failureThreshold: 3
+            successThreshold: 1
+            timeoutSeconds: 5
+            periodSeconds: 10
+          {{- with .Values.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: data-datastore
+              mountPath: /data/datastore
+            - name: data-reverse-index
+              mountPath: /data/reverse_index
+            - name: data-tmpstore
+              mountPath: /data/tmpstore
+            {{- if .Values.storage.mirror }}
+            - name: mirror
+              mountPath: /mirror
+            {{- end }}
+            - name: identity
+              mountPath: /identity
+            - name: config
+              mountPath: /config
+      volumes:
+        - name: data-datastore
+          hostPath:
+            path: {{ required "storage.datastore is required" .Values.storage.datastore }}
+            type: DirectoryOrCreate
+        - name: data-reverse-index
+          hostPath:
+            path: {{ required "storage.reverseIndex is required" .Values.storage.reverseIndex }}
+            type: DirectoryOrCreate
+        - name: data-tmpstore
+          hostPath:
+            path: {{ required "storage.tmpstore is required" .Values.storage.tmpstore }}
+            type: DirectoryOrCreate
+        {{- if .Values.storage.mirror }}
+        - name: mirror
+          hostPath:
+            path: {{ .Values.storage.mirror }}
+            type: DirectoryOrCreate
+        {{- end }}
+        - name: identity
+          secret:
+            secretName: {{ required "identitySecretName is required" .Values.identitySecretName }}
+        - name: config
+          configMap:
+            name: {{ include "indexer.configMapName" . }}

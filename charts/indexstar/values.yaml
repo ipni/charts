@@ -1,0 +1,19 @@
+# Required: "<repository>" and "<tag>", where tag may carry a digest
+# (v0.1.20@sha256:...). No default, so a box can never run an image by accident.
+image:
+  repository: ghcr.io/ipni/indexstar
+  tag: ""
+
+replicas: 2
+
+# The --backends and --providersBackends of this box. Required. A list, because
+# order is part of the pod template: reordering restarts indexstar.
+args: []
+
+# Also a list, for the same reason.
+env: []
+
+resources: {}
+
+podMonitor:
+  enabled: true

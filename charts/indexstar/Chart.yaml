@@ -1,0 +1,8 @@
+apiVersion: v2
+name: indexstar
+description: Sends each find to a set of indexers and merges the results
+type: application
+version: 0.1.0
+home: https://github.com/ipni/indexstar
+sources:
+  - https://github.com/ipni/indexstar

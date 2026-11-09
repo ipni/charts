@@ -1,0 +1,50 @@
+{{- if not .Values.args }}
+{{- fail "args is required: list this box's --backends and --providersBackends" }}
+{{- end }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: indexstar
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "indexstar.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicas }}
+  selector:
+    matchLabels:
+      app: indexstar
+  template:
+    metadata:
+      labels:
+        app: indexstar
+    spec:
+      securityContext:
+        runAsUser: 10001
+        fsGroup: 532
+      containers:
+        - name: indexstar
+          image: "{{ .Values.image.repository }}:{{ required "image.tag is required" .Values.image.tag }}"
+          args:
+            {{- toYaml .Values.args | nindent 12 }}
+          {{- with .Values.env }}
+          env:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          ports:
+            - containerPort: 8080
+              name: http
+            - containerPort: 8081
+              name: metrics
+          readinessProbe:
+            httpGet:
+              port: http
+              path: /health
+            initialDelaySeconds: 10
+            failureThreshold: 3
+            successThreshold: 1
+            timeoutSeconds: 5
+            periodSeconds: 10
+          {{- with .Values.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}

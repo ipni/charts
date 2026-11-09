@@ -1,0 +1,27 @@
+# Required: "<repository>" and "<tag>", where tag may carry a digest
+# (main@sha256:...). No default, so a box can never run an image by accident.
+image:
+  repository: ghcr.io/ipni/storetheindex
+  tag: ""
+
+# A list, because order is part of the pod template: reordering restarts the
+# assigner.
+env:
+  - name: GOLOG_LOG_LEVEL
+    value: INFO
+  - name: GOLOG_LOG_FMT
+    value: json
+
+resources: {}
+
+# The assigner config file, as YAML; the chart renders it as JSON. Maps merge
+# across values files, so a box only sets what differs. Required.
+config: {}
+
+# Leave empty: the ConfigMap is named after a hash of its content, so changing
+# it restarts the assigner, which reads its config only at startup. Set it only
+# to compare with a Kustomize render.
+configMapName: ""
+
+podMonitor:
+  enabled: true

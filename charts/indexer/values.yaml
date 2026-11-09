@@ -1,0 +1,55 @@
+# Required: "<repository>" and "<tag>", where tag may carry a digest
+# (main@sha256:...). No default, so a box can never run an image by accident.
+image:
+  repository: ghcr.io/ipni/storetheindex
+  tag: ""
+
+# Prepended to the name of every object this chart creates. sf and sf2 both
+# use "sf-", and the Ingress Controller dashboard matches on sf-indexer.
+namePrefix: ""
+
+# A list, because order is part of the pod template: reordering restarts the
+# indexer.
+env:
+  # When a panic happens, dump only the panicking goroutine. The indexer spawns
+  # so many that the panic site is otherwise lost to log rotation.
+  - name: GOTRACEBACK
+    value: single
+
+envFrom: []
+
+resources: {}
+
+terminationGracePeriodSeconds: 10
+
+# Secret holding the libp2p private key under the key identity.key. Created
+# outside this chart. Required.
+identitySecretName: ""
+
+# Host directories. Required, except mirror: leave it empty on a box that has
+# no local CAR mirror.
+storage:
+  datastore: ""
+  reverseIndex: ""
+  tmpstore: ""
+  mirror: ""
+
+# The storetheindex config file, as YAML; the chart renders it as JSON. Maps
+# merge across values files, so a box only sets what differs. Required.
+config: {}
+
+# Leave empty: the ConfigMap is named after a hash of its content, so changing
+# it restarts the indexer. Set it only to compare with a Kustomize render;
+# while set, changing config does NOT restart the indexer.
+configMapName: ""
+
+# Which of finder, ingest, admin, rx and carmirror the Service exposes. Only
+# expose admin if a route needs it: it also serves write and control endpoints.
+servicePorts:
+  - rx
+  - carmirror
+  - finder
+  - ingest
+
+podMonitor:
+  enabled: true

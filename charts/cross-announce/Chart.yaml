@@ -1,0 +1,8 @@
+apiVersion: v2
+name: cross-announce
+description: Re-announces the latest advertisement of every provider known to another indexer
+type: application
+version: 0.1.0
+home: https://github.com/ipni/storetheindex
+sources:
+  - https://github.com/ipni/storetheindex

@@ -1,0 +1,19 @@
+# The script is not in the storetheindex image, so each run clones the repo and
+# compiles it with this image.
+image:
+  repository: golang
+  tag: "1.26"
+
+schedule: "*/5 * * * *"
+
+# Stops the schedule without removing the job, which can still be run by hand.
+suspend: false
+
+# Indexer to list providers from, as a URL. Required.
+source: ""
+
+# Ingest API of the local indexer, as a URL. Required.
+target: ""
+
+# Branch or tag of storetheindex to run the script from. Required.
+codeVersion: ""

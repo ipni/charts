@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: assigner
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "assigner.labels" . | nindent 4 }}
+spec:
+  # Do not run more than one replica. The old assigner has to stop before a new
+  # one starts, to avoid conflicts between assignments.
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: assigner
+  template:
+    metadata:
+      labels:
+        app: assigner
+    spec:
+      terminationGracePeriodSeconds: 30
+      securityContext:
+        runAsUser: 10001
+        fsGroup: 532
+      containers:
+        - name: assigner
+          image: "{{ .Values.image.repository }}:{{ required "image.tag is required" .Values.image.tag }}"
+          imagePullPolicy: IfNotPresent
+          args:
+            - assigner
+            - daemon
+          env:
+            {{- with .Values.env }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+            - name: ASSIGNER_PATH
+              value: /config
+          ports:
+            - containerPort: 3001
+              name: http
+            - containerPort: 3003
+              name: libp2p
+            - containerPort: 8081
+              name: metrics
+          readinessProbe:
+            httpGet:
+              port: http
+              path: /health
+            initialDelaySeconds: 10
+            failureThreshold: 3
+            successThreshold: 1
+            timeoutSeconds: 5
+            periodSeconds: 10
+          {{- with .Values.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: config
+              mountPath: /config
+      volumes:
+        - name: config
+          configMap:
+            name: {{ include "assigner.configMapName" . }}

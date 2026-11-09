@@ -1,0 +1,12 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: indexstar
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "indexstar.labels" . | nindent 4 }}
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: indexstar
