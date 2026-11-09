@@ -1,26 +1,11 @@
 {{- $site := required "site is required" .Values.site }}
-apiVersion: {{ .Values.apiGroup }}/v1alpha1
-kind: Middleware
-metadata:
-  name: {{ $site }}-rate-limit
-  namespace: {{ .Release.Namespace }}
-spec:
-  # See: https://doc.traefik.io/traefik/middlewares/http/ratelimit/
-  rateLimit:
-    sourceCriterion:
-      ipStrategy:
-        depth: 1
-    period: 1m
-    average: 60
-    burst: 60
+{{- range $name, $spec := .Values.middlewares }}
 ---
-apiVersion: {{ .Values.apiGroup }}/v1alpha1
+apiVersion: {{ $.Values.apiGroup }}/v1alpha1
 kind: Middleware
 metadata:
-  name: {{ $site }}-cid-contact
-  namespace: {{ .Release.Namespace }}
+  name: {{ $site }}-{{ $name }}
+  namespace: {{ $.Release.Namespace }}
 spec:
-  # See: https://doc.traefik.io/traefik/middlewares/http/headers/#using-security-headers
-  headers:
-    accessControlAllowOriginList:
-      - "*"
+  {{- toYaml $spec | nindent 2 }}
+{{- end }}

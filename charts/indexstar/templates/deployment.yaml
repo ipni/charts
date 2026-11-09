@@ -4,26 +4,34 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: indexstar
+  name: {{ .Values.name }}
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "indexstar.labels" . | nindent 4 }}
 spec:
   replicas: {{ .Values.replicas }}
+  {{- with .Values.strategy }}
+  strategy:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
   selector:
     matchLabels:
-      app: indexstar
+      {{- toYaml .Values.selectorLabels | nindent 6 }}
   template:
     metadata:
       labels:
-        app: indexstar
+        {{- toYaml .Values.selectorLabels | nindent 8 }}
     spec:
+      {{- with .Values.podSecurityContext }}
       securityContext:
-        runAsUser: 10001
-        fsGroup: 532
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       containers:
         - name: indexstar
           image: "{{ .Values.image.repository }}:{{ required "image.tag is required" .Values.image.tag }}"
+          {{- with .Values.image.pullPolicy }}
+          imagePullPolicy: {{ . }}
+          {{- end }}
           args:
             {{- toYaml .Values.args | nindent 12 }}
           {{- with .Values.env }}
@@ -31,19 +39,9 @@ spec:
             {{- toYaml . | nindent 12 }}
           {{- end }}
           ports:
-            - containerPort: 8080
-              name: http
-            - containerPort: 8081
-              name: metrics
+            {{- toYaml .Values.ports | nindent 12 }}
           readinessProbe:
-            httpGet:
-              port: http
-              path: /health
-            initialDelaySeconds: 10
-            failureThreshold: 3
-            successThreshold: 1
-            timeoutSeconds: 5
-            periodSeconds: 10
+            {{- toYaml .Values.readinessProbe | nindent 12 }}
           {{- with .Values.resources }}
           resources:
             {{- toYaml . | nindent 12 }}

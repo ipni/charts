@@ -6,4 +6,4 @@ metadata:
   labels:
     {{- include "relayx.labels" . | nindent 4 }}
 data:
-  pebble.options: {{ required "pebbleOptions.content is required" .Values.pebbleOptions.content | quote }}
+  {{ .Values.pebbleOptions.fileName }}: {{ required "pebbleOptions.content is required" .Values.pebbleOptions.content | quote }}

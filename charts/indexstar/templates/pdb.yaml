@@ -1,12 +1,14 @@
+{{- if .Values.podDisruptionBudget.enabled }}
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
-  name: indexstar
+  name: {{ .Values.name }}
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "indexstar.labels" . | nindent 4 }}
 spec:
-  maxUnavailable: 1
+  maxUnavailable: {{ .Values.podDisruptionBudget.maxUnavailable }}
   selector:
     matchLabels:
-      app: indexstar
+      {{- toYaml .Values.selectorLabels | nindent 6 }}
+{{- end }}

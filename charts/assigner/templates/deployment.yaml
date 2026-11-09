@@ -1,64 +1,50 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: assigner
+  name: {{ .Values.name }}
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "assigner.labels" . | nindent 4 }}
 spec:
-  # Do not run more than one replica. The old assigner has to stop before a new
-  # one starts, to avoid conflicts between assignments.
-  replicas: 1
+  replicas: {{ .Values.replicas }}
   strategy:
-    type: Recreate
+    {{- toYaml .Values.strategy | nindent 4 }}
   selector:
     matchLabels:
-      app: assigner
+      {{- toYaml .Values.selectorLabels | nindent 6 }}
   template:
     metadata:
       labels:
-        app: assigner
+        {{- toYaml .Values.selectorLabels | nindent 8 }}
     spec:
-      terminationGracePeriodSeconds: 30
+      terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
+      {{- with .Values.podSecurityContext }}
       securityContext:
-        runAsUser: 10001
-        fsGroup: 532
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       containers:
         - name: assigner
           image: "{{ .Values.image.repository }}:{{ required "image.tag is required" .Values.image.tag }}"
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
           args:
-            - assigner
-            - daemon
+            {{- toYaml .Values.args | nindent 12 }}
           env:
             {{- with .Values.env }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
             - name: ASSIGNER_PATH
-              value: /config
+              value: {{ .Values.configMountPath }}
           ports:
-            - containerPort: 3001
-              name: http
-            - containerPort: 3003
-              name: libp2p
-            - containerPort: 8081
-              name: metrics
+            {{- toYaml .Values.ports | nindent 12 }}
           readinessProbe:
-            httpGet:
-              port: http
-              path: /health
-            initialDelaySeconds: 10
-            failureThreshold: 3
-            successThreshold: 1
-            timeoutSeconds: 5
-            periodSeconds: 10
+            {{- toYaml .Values.readinessProbe | nindent 12 }}
           {{- with .Values.resources }}
           resources:
             {{- toYaml . | nindent 12 }}
           {{- end }}
           volumeMounts:
             - name: config
-              mountPath: /config
+              mountPath: {{ .Values.configMountPath }}
       volumes:
         - name: config
           configMap:

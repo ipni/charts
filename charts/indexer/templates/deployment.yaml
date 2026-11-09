@@ -1,105 +1,78 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "indexer.name" . }}
+  name: {{ .Values.name }}
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "indexer.labels" . | nindent 4 }}
 spec:
-  # One replica on purpose: the datastores on the host paths belong to one
-  # process, so the old pod has to stop before the new one starts.
-  replicas: 1
+  replicas: {{ .Values.replicas }}
   strategy:
-    type: Recreate
+    {{- toYaml .Values.strategy | nindent 4 }}
   selector:
     matchLabels:
-      app: indexer-single
+      {{- toYaml .Values.selectorLabels | nindent 6 }}
   template:
     metadata:
       labels:
-        app: indexer-single
+        {{- toYaml .Values.selectorLabels | nindent 8 }}
     spec:
       terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
+      {{- with .Values.podSecurityContext }}
       securityContext:
-        runAsUser: 0
-        fsGroup: 532
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       containers:
         - name: indexer
           image: "{{ .Values.image.repository }}:{{ required "image.tag is required" .Values.image.tag }}"
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- with .Values.args }}
+          args:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           env:
             {{- with .Values.env }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
             - name: STORETHEINDEX_PRIV_KEY_PATH
-              value: /identity/identity.key
+              value: {{ printf "%s/%s" .Values.identity.mountPath .Values.identity.keyFile }}
             - name: STORETHEINDEX_PATH
-              value: /config
+              value: {{ .Values.configMountPath }}
           {{- with .Values.envFrom }}
           envFrom:
             {{- toYaml . | nindent 12 }}
           {{- end }}
           ports:
-            - containerPort: 3004
-              name: rx
-            - containerPort: 3005
-              name: carmirror
-            - containerPort: 3000
-              name: finder
-            - containerPort: 3001
-              name: ingest
-            - containerPort: 3002
-              name: admin
+            {{- toYaml .Values.ports | nindent 12 }}
           readinessProbe:
-            httpGet:
-              port: finder
-              path: /health
-            initialDelaySeconds: 10
-            failureThreshold: 3
-            successThreshold: 1
-            timeoutSeconds: 5
-            periodSeconds: 10
+            {{- toYaml .Values.readinessProbe | nindent 12 }}
           {{- with .Values.resources }}
           resources:
             {{- toYaml . | nindent 12 }}
           {{- end }}
           volumeMounts:
-            - name: data-datastore
-              mountPath: /data/datastore
-            - name: data-reverse-index
-              mountPath: /data/reverse_index
-            - name: data-tmpstore
-              mountPath: /data/tmpstore
-            {{- if .Values.storage.mirror }}
-            - name: mirror
-              mountPath: /mirror
+            {{- range $name, $volume := .Values.storage }}
+            {{- if or $volume.hostPath (not $volume.optional) }}
+            - name: {{ $name }}
+              mountPath: {{ $volume.mountPath }}
+            {{- end }}
             {{- end }}
             - name: identity
-              mountPath: /identity
+              mountPath: {{ .Values.identity.mountPath }}
             - name: config
-              mountPath: /config
+              mountPath: {{ .Values.configMountPath }}
       volumes:
-        - name: data-datastore
+        {{- range $name, $volume := .Values.storage }}
+        {{- if or $volume.hostPath (not $volume.optional) }}
+        - name: {{ $name }}
           hostPath:
-            path: {{ required "storage.datastore is required" .Values.storage.datastore }}
-            type: DirectoryOrCreate
-        - name: data-reverse-index
-          hostPath:
-            path: {{ required "storage.reverseIndex is required" .Values.storage.reverseIndex }}
-            type: DirectoryOrCreate
-        - name: data-tmpstore
-          hostPath:
-            path: {{ required "storage.tmpstore is required" .Values.storage.tmpstore }}
-            type: DirectoryOrCreate
-        {{- if .Values.storage.mirror }}
-        - name: mirror
-          hostPath:
-            path: {{ .Values.storage.mirror }}
-            type: DirectoryOrCreate
+            path: {{ required (printf "storage.%s.hostPath is required" $name) $volume.hostPath }}
+            type: {{ $volume.type }}
+        {{- end }}
         {{- end }}
         - name: identity
           secret:
-            secretName: {{ required "identitySecretName is required" .Values.identitySecretName }}
+            secretName: {{ required "identity.secretName is required" .Values.identity.secretName }}
         - name: config
           configMap:
             name: {{ include "indexer.configMapName" . }}

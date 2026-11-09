@@ -2,7 +2,7 @@
 {{- if .Values.pebbleOptions.configMapName -}}
 {{- .Values.pebbleOptions.configMapName -}}
 {{- else -}}
-relayx-pebble-options-{{ .Values.pebbleOptions.content | sha256sum | trunc 10 }}
+{{ .Values.name }}-pebble-options-{{ .Values.pebbleOptions.content | sha256sum | trunc 10 }}
 {{- end -}}
 {{- end -}}
 
@@ -10,6 +10,6 @@ relayx-pebble-options-{{ .Values.pebbleOptions.content | sha256sum | trunc 10 }}
 pod template (a change there restarts relayx). */}}
 {{- define "relayx.labels" -}}
 helm.sh/chart: {{ printf "%s-%s" .Chart.Name .Chart.Version }}
-app.kubernetes.io/name: relayx
+app.kubernetes.io/name: {{ .Chart.Name }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- end -}}

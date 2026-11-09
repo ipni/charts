@@ -1,19 +1,14 @@
-{{- $ports := dict "finder" 3000 "ingest" 3001 "admin" 3002 "rx" 3004 "carmirror" 3005 }}
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "indexer.name" . }}
+  name: {{ .Values.name }}
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "indexer.labels" . | nindent 4 }}
 spec:
-  clusterIP: None
+  clusterIP: {{ .Values.service.clusterIP }}
   ports:
-    {{- range .Values.servicePorts }}
-    - name: {{ . }}
-      port: {{ required (printf "unknown service port %q" .) (get $ports .) }}
-      targetPort: {{ . }}
-    {{- end }}
+    {{- toYaml .Values.service.ports | nindent 4 }}
   selector:
-    app: indexer-single
-  type: ClusterIP
+    {{- toYaml .Values.selectorLabels | nindent 4 }}
+  type: {{ .Values.service.type }}

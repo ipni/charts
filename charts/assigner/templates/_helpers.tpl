@@ -2,7 +2,7 @@
 {{- if .Values.configMapName -}}
 {{- .Values.configMapName -}}
 {{- else -}}
-{{- printf "assigner-config-%s" (.Values.config | toJson | sha256sum | trunc 10) -}}
+{{- printf "%s-config-%s" .Values.name (.Values.config | toJson | sha256sum | trunc 10) -}}
 {{- end -}}
 {{- end -}}
 
@@ -10,6 +10,6 @@
 pod template (a change there restarts the assigner). */}}
 {{- define "assigner.labels" -}}
 helm.sh/chart: {{ printf "%s-%s" .Chart.Name .Chart.Version }}
-app.kubernetes.io/name: assigner
+app.kubernetes.io/name: {{ .Chart.Name }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- end -}}

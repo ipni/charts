@@ -1,140 +1,42 @@
 {{- $site := required "site is required" .Values.site }}
-{{- $host := printf "%s.cid.contact" $site }}
-{{- $indexer := required "indexerService is required" .Values.indexerService }}
-apiVersion: {{ .Values.apiGroup }}/v1alpha1
+{{- $siteHost := printf "%s.%s" $site .Values.domain }}
+{{- $siteName := printf "%s-%s" $site (.Values.domain | replace "." "-") }}
+{{- range $key, $ingressRoute := .Values.ingressRoutes }}
+{{- $host := $siteHost }}
+{{- $name := $siteName }}
+{{- with $ingressRoute.hostPrefix }}
+{{- $host = printf "%s.%s" . $siteHost }}
+{{- $name = printf "%s-%s" . $siteName }}
+{{- end }}
+---
+apiVersion: {{ $.Values.apiGroup }}/v1alpha1
 kind: IngressRoute
 metadata:
-  name: {{ $site }}-cid-contact
-  namespace: {{ .Release.Namespace }}
+  name: {{ $name }}
+  namespace: {{ $.Release.Namespace }}
 spec:
   entryPoints:
-    - websecure
+    {{- toYaml $.Values.entryPoints | nindent 4 }}
   routes:
-    # Traefik default priority is match-rule length, so a long catch-all can
-    # beat or tie short Path/PathPrefix routes. Explicit priorities:
-    # 1 = indexstar catch-all, 100 = indexer APIs, 200 = more-specific prefixes.
+    {{- range $routeName, $route := $ingressRoute.routes }}
+    {{- if $route.enabled }}
     - kind: Rule
-      # Avoid conflict with TLS HTTP challenge by explicitly excluding /.well-known.
-      match: Host(`{{ $host }}`) && ! PathPrefix(`/.well-known`)
-      priority: 1
+      match: {{ printf "Host(`%s`) && %s" $host $route.match | quote }}
+      {{- with $route.priority }}
+      priority: {{ . }}
+      {{- end }}
       services:
-        - name: indexstar
-          port: 8080
+        - name: {{ $route.service }}
+          port: {{ $route.port }}
       middlewares:
-        - name: {{ $site }}-cid-contact
-    - kind: Rule
-      match: Host(`{{ $host }}`) && ( Path(`/ingest/announce`) || Path(`/announce`) )
-      priority: 100
-      services:
-        - name: assigner
-          port: 3001
-      middlewares:
-        - name: {{ $site }}-cid-contact
-    - kind: Rule
-      # Advertisement status is served by the ingest HTTP API (no rate limit; high traffic).
-      match: Host(`{{ $host }}`) && ( PathPrefix(`/sync/status/ad`) )
-      priority: 200
-      services:
-        - name: {{ $indexer }}
-          port: 3001
-      middlewares:
-        - name: {{ $site }}-cid-contact
-    - kind: Rule
-      # Publisher sync status is served by the ingest HTTP API.
-      match: Host(`{{ $host }}`) && ( PathPrefix(`/sync/status`) )
-      priority: 100
-      services:
-        - name: {{ $indexer }}
-          port: 3001
-      middlewares:
-        - name: {{ $site }}-cid-contact
-        - name: {{ $site }}-rate-limit
-    - kind: Rule
-      match: Host(`{{ $host }}`) && ( PathPrefix(`/ipni/v0/sample`) )
-      priority: 100
-      services:
-        - name: {{ $indexer }}
-          port: 3004
-      middlewares:
-        - name: {{ $site }}-cid-contact
-    {{- if .Values.routes.metering }}
-    - kind: Rule
-      # Metering report of every provider, from the admin API. Only this path
-      # and read methods are routed: the admin port also serves write and
-      # control endpoints.
-      match: Host(`{{ $host }}`) && Path(`/metering/providers`) && ( Method(`GET`) || Method(`HEAD`) )
-      priority: 200
-      services:
-        - name: {{ $indexer }}
-          port: 3002
-      middlewares:
-        - name: {{ $site }}-cid-contact
-        - name: {{ $site }}-rate-limit
+        {{- range $route.middlewares }}
+        - name: {{ $site }}-{{ . }}
+        {{- end }}
     {{- end }}
-    {{- if .Values.routes.carMirror }}
-    - kind: Rule
-      match: Host(`{{ $host }}`) && ( PathPrefix(`/carmirror`) )
-      priority: 100
-      services:
-        - name: {{ $indexer }}
-          port: 3005
-      middlewares:
-        - name: {{ $site }}-cid-contact
     {{- end }}
   tls:
-    certResolver: {{ .Values.certResolver }}
+    certResolver: {{ $.Values.certResolver }}
     domains:
       - main: {{ $host }}
         sans: []
----
-# Direct find hostname used by other sites' indexstar instances.
-# A dedicated IngressRoute keeps this certificate independent
-# so an ACME failure here cannot block the public cert.
-apiVersion: {{ .Values.apiGroup }}/v1alpha1
-kind: IngressRoute
-metadata:
-  name: find-{{ $site }}-cid-contact
-  namespace: {{ .Release.Namespace }}
-spec:
-  entryPoints:
-    - websecure
-  routes:
-    - kind: Rule
-      match: Host(`find.{{ $host }}`) && (PathPrefix(`/cid/`) || PathPrefix(`/multihash/`))
-      services:
-        - name: {{ $indexer }}
-          port: 3000
-      middlewares:
-        - name: {{ $site }}-cid-contact
-  tls:
-    certResolver: {{ .Values.certResolver }}
-    domains:
-      - main: find.{{ $host }}
-        sans: []
----
-# Direct ingest hostname used by other sites' assigner (announce fan-out).
-# Hits indexer ingest directly so it cannot loop through the public announce
-# hostname. No rate limit: fan-out from one peer would otherwise share one IP
-# budget. Dedicated IngressRoute keeps this certificate independent so an ACME
-# failure here cannot block the public cert.
-apiVersion: {{ .Values.apiGroup }}/v1alpha1
-kind: IngressRoute
-metadata:
-  name: ingest-{{ $site }}-cid-contact
-  namespace: {{ .Release.Namespace }}
-spec:
-  entryPoints:
-    - websecure
-  routes:
-    - kind: Rule
-      match: Host(`ingest.{{ $host }}`) && (Path(`/ingest/announce`) || Path(`/announce`))
-      services:
-        - name: {{ $indexer }}
-          port: 3001
-      middlewares:
-        - name: {{ $site }}-cid-contact
-  tls:
-    certResolver: {{ .Values.certResolver }}
-    domains:
-      - main: ingest.{{ $host }}
-        sans: []
+{{- end }}
