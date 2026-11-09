@@ -26,7 +26,8 @@ podSecurityContext:
 # order is part of the pod template: reordering restarts indexstar.
 args: []
 
-# Also a list, for the same reason.
+# Add or remove entries here; the chart adds none of its own. Also a list, for
+# the same reason.
 env: []
 
 ports:
@@ -63,3 +64,12 @@ podMonitor:
   enabled: true
   path: /metrics
   port: metrics
+
+# Anything else the pod needs, without changing the chart.
+envFrom: []
+podAnnotations: {}
+nodeSelector: {}
+tolerations: []
+affinity: {}
+extraVolumes: []
+extraVolumeMounts: []

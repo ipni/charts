@@ -22,22 +22,46 @@ spec:
         metadata:
           labels:
             {{- toYaml .Values.podLabels | nindent 12 }}
+          {{- with .Values.podAnnotations }}
+          annotations:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
         spec:
           restartPolicy: {{ .Values.restartPolicy }}
+          {{- with .Values.podSecurityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.nodeSelector }}
+          nodeSelector:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.tolerations }}
+          tolerations:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.affinity }}
+          affinity:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           volumes:
             - name: src
               emptyDir: {}
+            {{- with .Values.extraVolumes }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
           containers:
             - name: runner
               image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
               imagePullPolicy: {{ .Values.image.pullPolicy }}
+              {{- with .Values.env }}
               env:
-                - name: AD_SOURCE
-                  value: {{ required "source is required" .Values.source | quote }}
-                - name: AD_TARGET
-                  value: {{ required "target is required" .Values.target | quote }}
-                - name: CODE_VERSION
-                  value: {{ required "codeVersion is required" .Values.codeVersion | quote }}
+                {{- toYaml . | nindent 16 }}
+              {{- end }}
+              {{- with .Values.envFrom }}
+              envFrom:
+                {{- toYaml . | nindent 16 }}
+              {{- end }}
               {{- with .Values.resources }}
               resources:
                 {{- toYaml . | nindent 16 }}
@@ -45,6 +69,9 @@ spec:
               volumeMounts:
                 - name: src
                   mountPath: {{ .Values.workDir }}
+                {{- with .Values.extraVolumeMounts }}
+                {{- toYaml . | nindent 16 }}
+                {{- end }}
               command:
                 {{- toYaml .Values.command | nindent 16 }}
               args:

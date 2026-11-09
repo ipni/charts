@@ -27,16 +27,23 @@ restartPolicy: OnFailure
 podLabels:
   app: cross-announce
 
-# Indexer to list providers from, as a URL. Required.
-source: ""
-
-# Ingest API of the local indexer, as a URL. Required.
-target: ""
-
-# Branch or tag of storetheindex to run the script from. Required.
-codeVersion: ""
+# Add or remove entries here; the chart adds none of its own. The default script
+# needs AD_SOURCE (indexer to list providers from, as a URL), AD_TARGET (ingest
+# API of the local indexer, as a URL) and CODE_VERSION (branch or tag of
+# storetheindex to run the script from).
+env: []
+envFrom: []
 
 resources: {}
+
+# Anything else the pod needs, without changing the chart.
+podAnnotations: {}
+podSecurityContext: {}
+nodeSelector: {}
+tolerations: []
+affinity: {}
+extraVolumes: []
+extraVolumeMounts: []
 
 # Where the repo is cloned, an emptyDir. Has to match DEST in script.
 workDir: /src
@@ -45,7 +52,7 @@ command:
   - /bin/bash
   - -c
 
-# Reads AD_SOURCE, AD_TARGET and CODE_VERSION, set from the values above.
+# Reads AD_SOURCE, AD_TARGET and CODE_VERSION from env above.
 script: |
   set -euo pipefail
 

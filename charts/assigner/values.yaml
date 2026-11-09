@@ -29,13 +29,17 @@ args:
   - assigner
   - daemon
 
-# A list, because order is part of the pod template: reordering restarts the
-# assigner.
+# Add or remove entries here; the chart adds none of its own. A box that sets
+# env replaces this whole list, so it has to repeat ASSIGNER_PATH, which matches
+# configMountPath. A list, because order is part of the pod template: reordering
+# restarts the assigner.
 env:
   - name: GOLOG_LOG_LEVEL
     value: INFO
   - name: GOLOG_LOG_FMT
     value: json
+  - name: ASSIGNER_PATH
+    value: /config
 
 ports:
   - containerPort: 3001
@@ -79,3 +83,12 @@ podMonitor:
   enabled: true
   path: /metrics
   port: metrics
+
+# Anything else the pod needs, without changing the chart.
+envFrom: []
+podAnnotations: {}
+nodeSelector: {}
+tolerations: []
+affinity: {}
+extraVolumes: []
+extraVolumeMounts: []

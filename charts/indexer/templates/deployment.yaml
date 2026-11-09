@@ -16,10 +16,26 @@ spec:
     metadata:
       labels:
         {{- toYaml .Values.selectorLabels | nindent 8 }}
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
     spec:
       terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
       {{- with .Values.podSecurityContext }}
       securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       containers:
@@ -30,14 +46,10 @@ spec:
           args:
             {{- toYaml . | nindent 12 }}
           {{- end }}
+          {{- with .Values.env }}
           env:
-            {{- with .Values.env }}
             {{- toYaml . | nindent 12 }}
-            {{- end }}
-            - name: STORETHEINDEX_PRIV_KEY_PATH
-              value: {{ printf "%s/%s" .Values.identity.mountPath .Values.identity.keyFile }}
-            - name: STORETHEINDEX_PATH
-              value: {{ .Values.configMountPath }}
+          {{- end }}
           {{- with .Values.envFrom }}
           envFrom:
             {{- toYaml . | nindent 12 }}
@@ -61,6 +73,9 @@ spec:
               mountPath: {{ .Values.identity.mountPath }}
             - name: config
               mountPath: {{ .Values.configMountPath }}
+            {{- with .Values.extraVolumeMounts }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
       volumes:
         {{- range $name, $volume := .Values.storage }}
         {{- if or $volume.hostPath (not $volume.optional) }}
@@ -76,3 +91,6 @@ spec:
         - name: config
           configMap:
             name: {{ include "indexer.configMapName" . }}
+        {{- with .Values.extraVolumes }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}

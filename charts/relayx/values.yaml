@@ -29,7 +29,8 @@ args:
   - --pebblePath=/data
   - --pebbleOptions=/pebble/pebble.options
 
-# A list, because order is part of the pod template: reordering restarts relayx.
+# Add or remove entries here; the chart adds none of its own. A list, because
+# order is part of the pod template: reordering restarts relayx.
 env: []
 
 ports:
@@ -79,3 +80,12 @@ podMonitor:
   enabled: true
   path: /metrics
   port: http
+
+# Anything else the pod needs, without changing the chart.
+envFrom: []
+podAnnotations: {}
+nodeSelector: {}
+tolerations: []
+affinity: {}
+extraVolumes: []
+extraVolumeMounts: []
