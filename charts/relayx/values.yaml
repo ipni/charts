@@ -29,9 +29,14 @@ args:
   - --pebblePath=/data
   - --pebbleOptions=/pebble/pebble.options
 
-# Add or remove entries here; the chart adds none of its own. A list, because
-# order is part of the pod template: reordering restarts relayx.
-env: []
+# By variable name. Maps merge across values files, so a box adds one with
+# NAME: value and removes one with NAME: null, in its values alone: no new chart
+# release. A value is a string, or a map such as valueFrom. Rendered sorted by
+# name.
+env: {}
+
+# Names in env that must have a value, or the chart fails to render.
+requiredEnv: []
 
 ports:
   - containerPort: 8080

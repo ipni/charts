@@ -29,17 +29,19 @@ args:
   - assigner
   - daemon
 
-# Add or remove entries here; the chart adds none of its own. A box that sets
-# env replaces this whole list, so it has to repeat ASSIGNER_PATH, which matches
-# configMountPath. A list, because order is part of the pod template: reordering
-# restarts the assigner.
+# By variable name. Maps merge across values files, so a box adds one with
+# NAME: value and removes one with NAME: null, in its values alone: no new chart
+# release. A value is a string, or a map such as valueFrom. Rendered sorted by
+# name.
 env:
-  - name: GOLOG_LOG_LEVEL
-    value: INFO
-  - name: GOLOG_LOG_FMT
-    value: json
-  - name: ASSIGNER_PATH
-    value: /config
+  GOLOG_LOG_LEVEL: INFO
+  GOLOG_LOG_FMT: json
+  # Has to match configMountPath.
+  ASSIGNER_PATH: /config
+
+# Names in env that must have a value, or the chart fails to render.
+requiredEnv:
+  - ASSIGNER_PATH
 
 ports:
   - containerPort: 3001

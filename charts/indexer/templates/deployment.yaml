@@ -46,9 +46,9 @@ spec:
           args:
             {{- toYaml . | nindent 12 }}
           {{- end }}
-          {{- with .Values.env }}
+          {{- with include "indexer.env" . | trim }}
           env:
-            {{- toYaml . | nindent 12 }}
+            {{- . | nindent 12 }}
           {{- end }}
           {{- with .Values.envFrom }}
           envFrom:

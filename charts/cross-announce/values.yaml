@@ -27,11 +27,20 @@ restartPolicy: OnFailure
 podLabels:
   app: cross-announce
 
-# Add or remove entries here; the chart adds none of its own. The default script
-# needs AD_SOURCE (indexer to list providers from, as a URL), AD_TARGET (ingest
-# API of the local indexer, as a URL) and CODE_VERSION (branch or tag of
+# By variable name. Maps merge across values files, so a box adds one with
+# NAME: value and removes one with NAME: null, in its values alone: no new chart
+# release. A value is a string, or a map such as valueFrom. Rendered sorted by
+# name.
+env: {}
+
+# Names in env that must have a value, or the chart fails to render. The default
+# script needs AD_SOURCE (indexer to list providers from, as a URL), AD_TARGET
+# (ingest API of the local indexer, as a URL) and CODE_VERSION (branch or tag of
 # storetheindex to run the script from).
-env: []
+requiredEnv:
+  - AD_SOURCE
+  - AD_TARGET
+  - CODE_VERSION
 envFrom: []
 
 resources: {}

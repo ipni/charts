@@ -28,19 +28,22 @@ podSecurityContext:
 # Empty runs the image's default command, the daemon.
 args: []
 
-# Add or remove entries here; the chart adds none of its own. A box that sets
-# env replaces this whole list, so it has to repeat the two paths, which match
-# identity and configMountPath. A list, because order is part of the pod
-# template: reordering restarts the indexer.
+# By variable name. Maps merge across values files, so a box adds one with
+# NAME: value and removes one with NAME: null, in its values alone: no new chart
+# release. A value is a string, or a map such as valueFrom. Rendered sorted by
+# name.
 env:
   # When a panic happens, dump only the panicking goroutine. The indexer spawns
   # so many that the panic site is otherwise lost to log rotation.
-  - name: GOTRACEBACK
-    value: single
-  - name: STORETHEINDEX_PRIV_KEY_PATH
-    value: /identity/identity.key
-  - name: STORETHEINDEX_PATH
-    value: /config
+  GOTRACEBACK: single
+  # These two have to match identity and configMountPath.
+  STORETHEINDEX_PRIV_KEY_PATH: /identity/identity.key
+  STORETHEINDEX_PATH: /config
+
+# Names in env that must have a value, or the chart fails to render.
+requiredEnv:
+  - STORETHEINDEX_PRIV_KEY_PATH
+  - STORETHEINDEX_PATH
 
 envFrom: []
 

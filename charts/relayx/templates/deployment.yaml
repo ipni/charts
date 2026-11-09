@@ -47,9 +47,9 @@ spec:
           {{- end }}
           args:
             {{- toYaml .Values.args | nindent 12 }}
-          {{- with .Values.env }}
+          {{- with include "relayx.env" . | trim }}
           env:
-            {{- toYaml . | nindent 12 }}
+            {{- . | nindent 12 }}
           {{- end }}
           {{- with .Values.envFrom }}
           envFrom:

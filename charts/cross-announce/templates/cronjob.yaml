@@ -54,9 +54,9 @@ spec:
             - name: runner
               image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
               imagePullPolicy: {{ .Values.image.pullPolicy }}
-              {{- with .Values.env }}
+              {{- with include "cross-announce.env" . | trim }}
               env:
-                {{- toYaml . | nindent 16 }}
+                {{- . | nindent 16 }}
               {{- end }}
               {{- with .Values.envFrom }}
               envFrom:
